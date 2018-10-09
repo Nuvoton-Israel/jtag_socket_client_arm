@@ -36,6 +36,8 @@ if __name__ == '__main__':
                 print("regs - show all registers")
                 print("mem32 - read 32-bit item")
                 print("wmem32 - write 32-bit item")
+                print("setBP - set breakpoint")
+                print("clrBP - clear breakpoint")
                 print("quit - close jtag-client")
             elif client_cmd[0] == "id":      
                 buff.append(TAP_RESET)
@@ -411,8 +413,30 @@ if __name__ == '__main__':
                     response = bytearray(client.recv(128))
                 except Exception as e:
                     print(str(e))
-            elif client_cmd[0] == "test":
-                print("PC: %x" %PC)
+            elif client_cmd[0] == "setBP":
+                if args != 2:
+                    print("Syntex: setBP <Addr>")
+                    continue
+                try:
+                    address = int(client_cmd[1], 16)
+                    jtag_select_scan_chain(buff, SCAN_2)
+                    jtag_compose_chain2(buff, ARM_ICE_REG[WP0CTRLVAL][ICE_REG_ADDR], 0x0, SCAN_2_RW.W)
+                    jtag_compose_chain2(buff, ARM_ICE_REG[WP0ADDRVAL][ICE_REG_ADDR], address, SCAN_2_RW.W)
+                    jtag_compose_chain2(buff, ARM_ICE_REG[WP0ADDRMSK][ICE_REG_ADDR], 0x3, SCAN_2_RW.W)
+                    jtag_compose_chain2(buff, ARM_ICE_REG[WP0DATAMSK][ICE_REG_ADDR], 0xFFFFFFFF, SCAN_2_RW.W)
+                    jtag_compose_chain2(buff, ARM_ICE_REG[WP0CTRLMSK][ICE_REG_ADDR], 0xF7, SCAN_2_RW.W)
+                    jtag_compose_chain2(buff, ARM_ICE_REG[WP0CTRLVAL][ICE_REG_ADDR], 0x100, SCAN_2_RW.W)
+                    jtag_calc_size(header, buff)
+                    client.sendall(string_at(addressof(header), sizeof(header)) + buff)
+                    response = bytearray(client.recv(128))
+                except Exception as e:
+                    print(str(e))
+            elif client_cmd[0] == "clrBP":
+                jtag_select_scan_chain(buff, SCAN_2)
+                jtag_compose_chain2(buff, ARM_ICE_REG[WP0CTRLVAL][ICE_REG_ADDR], 0x0, SCAN_2_RW.W)
+                jtag_calc_size(header, buff)
+                client.sendall(string_at(addressof(header), sizeof(header)) + buff)
+                response = bytearray(client.recv(128))
             elif client_cmd[0] == "quit":
                 break
             else:

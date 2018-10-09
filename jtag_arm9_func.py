@@ -131,7 +131,7 @@ def jtag_compose_chain2(buff, addr, val, rw):
     buff.append((val >> 16) & 0xFF)
     buff.append((val >> 24) & 0xFF)
     buff.append((rw << 5) | addr)
-    buff.append(TAP_JtagEx1DR)
+    buff.append(TAP_JtagRTI)
 
 def jtag_compose_ir(buff, instruction):
     buff.append(TAP_JtagShfIR)
